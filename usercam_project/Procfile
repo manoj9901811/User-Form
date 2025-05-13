@@ -1,0 +1,1 @@
+web: gunicorn usercam_project.wsgi
