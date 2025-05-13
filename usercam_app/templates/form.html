@@ -1,0 +1,244 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Detail Form</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensures the body takes at least 100% of the viewport height */
+            background-image: url("{% static 'background.jpg' %}"); /* Path to your background image */
+            background-size: cover; /* Ensures the image covers the entire background */
+            background-position: center; /* Centers the background image */
+            background-attachment: fixed; /* Makes the background fixed while scrolling */
+        }
+        
+
+        h2 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.8); /* Semi-transparent background for the form */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 50%;
+            max-width: 600px;
+            margin: 20px;
+        }
+
+        form {
+            width: 100%;
+        }
+
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #4CAF50;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 14px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        label {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+            display: block;
+        }
+
+        .photo-frame {
+            width: 100%;
+            height: 250px;
+            border: 2px solid #ddd;
+            background-color: #eaeaea;
+            border-radius: 8px;
+            position: relative;
+            margin-bottom: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        video, img.preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .form-container {
+                width: 80%;
+            }
+
+            button {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>User Detail Form</h2>
+
+        {% if success %}
+            <p style="color: green; text-align: center;">Data saved successfully!</p>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <label for="name">Name:</label>
+            <input type="text" name="name" required>
+
+            <label for="age">Age:</label>
+            <input type="number" name="age" required>
+            
+            <label for="dob">Date of Birth:</label>
+            <input type="date" name="dob" required>
+            
+            <label for="gender">Gender:</label>
+            <select name="gender" required>
+                <option value="" selected disabled>Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="email">Email:</label>
+            <input type="email" name="email" required>
+
+            <label for="address">Address:</label>
+            <textarea name="address" rows="3" required></textarea>
+
+            <label for="occupation">Occupation:</label>
+            <input type="text" name="occupation" required>
+
+            <label for="phone_number">Phone Number:</label>
+            <input type="text" name="phone_number" required>
+
+            <label for="video">Camera Preview:</label>
+            <div class="photo-frame" id="photoFrame" onclick="toggleCamera()">
+                <video id="video" autoplay playsinline></video>
+                <img id="preview" class="preview" src="#" alt="Captured Photo Preview" style="display:none;" />
+            </div>
+
+            <input type="hidden" name="photo" id="photoInput">
+
+            <button type="submit">Submit</button>
+
+            <div class="instructions">
+                <p>Click the photo frame to start the camera, then click again to capture the photo.</p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const photoFrame = document.getElementById('photoFrame');
+        const canvas = document.createElement('canvas');
+        const photoInput = document.getElementById('photoInput');
+        const preview = document.getElementById('preview');
+        let isCameraOn = false;
+
+        // Function to toggle the camera feed and capture the photo when clicked
+        function toggleCamera() {
+            if (!isCameraOn) {
+                startCamera();
+            } else {
+                takeSnapshot();
+            }
+        }
+
+        // Start the camera when clicked
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    isCameraOn = true;
+                })
+                .catch(error => {
+                    alert("Camera access failed!");
+                    console.error(error);
+                });
+        }
+
+        // Capture the snapshot from the video feed and stop the camera
+        function takeSnapshot() {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/png');
+
+            // Set hidden input to base64 string
+            photoInput.value = dataURL;
+
+            // Show the captured image in the default photo frame
+            preview.src = dataURL;
+            preview.style.display = 'block';
+
+            // Hide the video and stop the camera feed
+            video.srcObject.getTracks().forEach(track => track.stop());
+            video.style.display = 'none';
+            isCameraOn = false;
+
+            alert("Photo captured! You can now submit the form.");
+        }
+    </script>
+
+</body>
+</html>
